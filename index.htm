@@ -1,0 +1,87 @@
+<!doctype html5>
+<html>
+    <head>
+        <title>slimgur</title>
+        <meta charset="UTF-8"> 
+        <link rel="stylesheet" type="text/css" href="style/style.css">
+
+		<script type="text/javascript" src="local:///chrome/webworks.js"></script>
+        <script src="js/jquery.js" type="text/javascript"></script>
+        <script src="js/underscore_1.4.3.js" type="text/javascript"></script>
+        <script src="js/backbone_0.9.9.js" type="text/javascript"></script>
+
+        <script src="js/app.js" type="text/javascript"></script>
+
+		<script type="text/javascript">
+			document.addEventListener('webworksready', function(e) {
+                blackberry.event.addEventListener("invoked", 
+                    function(data) {
+                        blackberry.io.sandbox = false;
+                        // chop off the 'file:///' protocol from URI
+                        data.uri = data.uri.substr(7, data.uri.length)
+
+                        window.webkitRequestFileSystem(window.PERSISTENT,
+                            1024 * 1024,
+                            function success(fs) {
+                                fs.root.getFile(data.uri, null, 
+                                    function success(f) {
+                                        window.MainView.addFiles([f.file()]);
+                                    },
+                                    function error(e){
+                                        alert("Error reading file"+e);
+                                    });
+                            },
+                            function error(e){
+                                alert("Error reading file: "+e.code);
+                            }
+                        );
+                    }
+                );
+				
+				bb.init();
+			}, false);
+		</script>
+    </head>
+    <body id="app">
+        <!-- file field that's clickable anywhere on the screen -->
+        <div id="droparea"></div>
+
+        <div id="wrapper">
+            <input type="file" multiple="multiple" 
+                   accept="image/jpeg;image/png;image/gif" 
+                   id="upload_input">
+            
+            <div id="gallery">
+                <div id="image_template" class="image">
+                    <!-- Large image -->
+                    <div class="image_large_container">
+                        <img class="image_large" alt="Image you uploaded" 
+                             src="<% response.link %>">
+                    </div>
+
+                    <!-- Details -->
+                    <div class="image_details">
+
+                        <div class="details_wrapper clearfix">
+                            <div class="image_data">
+                                <img class="thumb" alt="Image you uploaded" 
+                                     src="<%= response.link %>">
+                            </div>
+
+                            <input class="image_url" type="text"
+                                   value="<%= response.link %>">
+
+                        </div>
+                    </div>
+                    <!--
+                    <div class="progress">
+                        <div class="progress_total"></div>
+                        <canvas class="progress_left" 
+                                width=1024 height=768></canvas>
+                    </div>
+                    -->
+                </div>
+           </div> 
+        </div>
+    </body>
+</html>
