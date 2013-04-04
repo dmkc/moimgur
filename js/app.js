@@ -10,17 +10,14 @@ $(document).ready(function(){
         // Model for a single image
             ImageModel = Backbone.Model.extend({
                 defaults: {
-                    // `File` object for this image
+                    // File API object for this image
                     fileObject: undefined,
                     // empty data URL == needs a thumbnail
                     dataURL: '',
-
-                    response: {
-                        status: 0,
-                        deletehash: '',
-                        id: '',
-                        link: ''
-                    }
+                    status: 0,
+                    deletehash: '',
+                    id: '',
+                    link: ''
                 },
 
                 sync: function(){}
@@ -40,16 +37,20 @@ $(document).ready(function(){
             ImageView = Backbone.View.extend({
                 template: _.template($('#image_template').html()),
                 events: {
-                    "click": "flipCard"
+                    "click .image_large_container": "flipCard",
+                    "click .image_details": "flipCard"
                 },
 
                 initialize: function() {
                     this.listenTo(this.model, 'change', this.render);
+                    this.listenTo(this.model, 'uploaded', this.flipCard);
                     // Create progress meter once image is loaded from disk
                     //this.on('Image:dataReady', this.initProgressMeter, this);
                 },
 
                 render: function() {
+                    console.log('Render model', this.model.toJSON());
+                    // Only render node once, then update values
                     if(this.$el.children().length === 0) {
                         this.$el.html(this.template(this.model.toJSON()));
                     }
@@ -57,13 +58,16 @@ $(document).ready(function(){
                     this.$el.addClass('image');
                     this.imageLarge  = this.$('.image_large');
                     this.thumbnail = this.$('.thumb');
+                    this.imageURL = this.$('.image_url');
 
                     this.imageLarge.attr('src', this.model.get('dataURL'));
+                    this.thumbnail.attr( 'src', this.model.get('dataURL'));
+                    this.imageURL.val(this.model.get('link'));
                     //this.input = this.$('.edit');
                     return this;
                 },
 
-                // TODO: move into a controller
+                // XXX: Unused at the moment. Funky uploading animation?
                 initProgressMeter: function() {
                     var canvas = this.$('.progress_left')[0],
                         context = canvas.getContext("2d"),
@@ -95,8 +99,14 @@ $(document).ready(function(){
                     this.trigger('Image:progressMeterDone');
                 },
 
-                flipCard: function() {
-                    this.$el.toggleClass('flipped');
+                flipCard: function(e) {
+                    this.imageURL.select();
+                    if(e && e.target == this.imageURL[0]) {
+                        e.preventDefault();
+                        return;
+                    }
+                    if(this.model.get('link') != '')
+                        this.$el.toggleClass('flipped');
                 }
             }),
 
@@ -116,7 +126,37 @@ $(document).ready(function(){
                     this.droparea = $('#droparea');
                     this.gallery = $('#gallery');
 
-                    Images.on('add', this.loadImageLocally, this);
+                    Images.on('add', this.addImage, this);
+                    Images.on('remove', this.removeImage, this);
+                },
+
+                addImage: function(image) {
+                    this.droparea.hide();
+                    var view = new ImageView({model: image});
+                    this.gallery.append(view.render().el);
+                    console.log('New image view:', view);
+
+                    this.getLocalFile(image);
+                    this.upload();
+                },
+                removeImage: function(image) {
+                    if(Images.length == 0) {
+                        this.droparea.show();
+                    }
+                },
+
+                // Generate local thumbnail
+                getLocalFile: function(image) {
+                    var fr   = new FileReader(),
+                        that = this;
+                    
+                    fr.onloadend = function() {
+                        image.set({
+                            dataURL: fr.result
+                        });
+                    }
+
+                    fr.readAsDataURL(image.get('fileObject'));
                 },
 
 
@@ -132,8 +172,9 @@ $(document).ready(function(){
 
                 // Upload all files in the settings.file_list array
                 upload: function(){
-                    while(settings.file_list.length != 0) {
-                        var file = settings.file_list.splice(0,1)[0];
+                    for(var i=0; i<Images.length; i++) {
+                        var image = Images.at(i),
+                            file  = image.get('fileObject');
 
                         // Make sure we don't upload non-images
                         if (!file || !file.type.match(/image.*/)) return;
@@ -147,37 +188,20 @@ $(document).ready(function(){
                         xhr.setRequestHeader('Authorization', 'Client-ID ' + settings.client_id);
                         xhr.onload = function() {
                             var response = JSON.parse(xhr.responseText);
-                            console.log('Uploaded. Got some data back:', response);
+                            console.log('Image uploaded:', response);
 
                             // XXX: Ugly GUI stuff
-                            $('#droparea').remove();
-                            $('.image_large').attr('src', response.data.link)
-                            $('.url_imgur').val(response.data.link)
-                            // emit uploaded event
+                            //$('#droparea').remove();
+                            image.set('deletehash', response.data.deletehash);
+                            image.set('link', response.data.link);
+                            image.set('id', response.data.id);
+                            image.trigger('uploaded');
                         }
                         // XXX error handling
                         xhr.send(fd);
                     }
                 },
                 
-                // Load image data from user's disk before uploading
-                loadImageLocally: function(image) {
-                    console.log('New image added to collection', image);
-
-                    var view = new ImageView({model: image}),
-                        fr = new FileReader(),
-                        that = this;
-                    
-                    fr.onloadend = function() {
-                        image.set({
-                            dataURL: fr.result
-                        });
-                        $('#droparea').remove();
-                        that.gallery.append(view.render().el);
-                    }
-
-                    fr.readAsDataURL(image.get('fileObject'));
-                },
 
                 thumbnailDone: function(image) {
                     console.log('Thumbnail done');
@@ -203,7 +227,7 @@ $(document).ready(function(){
                 filesDropped: function(e) {
                     console.log("File dropped", e);
                     this.addFiles(e.dataTransfer.files);
-                    this.upload();
+                    //this.upload();
                 },
 
                 // Add files to the array of files to be uploaded
@@ -242,7 +266,7 @@ $(document).ready(function(){
             // Mix in event handling
             _.extend(MainView, Backbone.Events);
 
-            window.AppView = new MainView;
+            window.MainView = new MainView;
             window.Images  = Images;
     })();
 });

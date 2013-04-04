@@ -2,3 +2,5 @@
 *.swp
 build
 tags
+bin
+build.number

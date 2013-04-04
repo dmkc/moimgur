@@ -38,7 +38,7 @@
                     }
                 );
 				
-				bb.init();
+				//bb.init();
 			}, false);
 		</script>
     </head>
@@ -53,25 +53,25 @@
             
             <div id="gallery">
                 <div id="image_template" class="image">
-                    <!-- Large image -->
-                    <div class="image_large_container">
-                        <img class="image_large" alt="Image you uploaded" 
-                             src="<% response.link %>">
-                    </div>
 
                     <!-- Details -->
                     <div class="image_details">
 
                         <div class="details_wrapper clearfix">
                             <div class="image_data">
-                                <img class="thumb" alt="Image you uploaded" 
-                                     src="<%= response.link %>">
+                                <img class="thumb" alt="" 
+                                     src="">
                             </div>
 
                             <input class="image_url" type="text"
-                                   value="<%= response.link %>">
+                                   value="" disabled>
 
                         </div>
+                    </div>
+                    <!-- Large image -->
+                    <div class="image_large_container">
+                        <img class="image_large" alt="Image you uploaded" 
+                             src="">
                     </div>
                     <!--
                     <div class="progress">
