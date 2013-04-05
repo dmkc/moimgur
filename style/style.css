@@ -13,6 +13,36 @@ body {
     background: url(../images/icon_camera_256.png) center center no-repeat;
 }
 
+#progress {
+    display: none;
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+}
+
+#progress_icon {
+    width: 200px;
+    height: 200px;
+    border-radius: 40px;
+    background: #444 url(../images/progress_128.gif) center center no-repeat;
+    opacity: 0.9;
+    vertical-align: middle;
+    display: inline-block;   
+}
+
+#progress_icon_ghost {
+    content: '';
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+    margin-right: -0.25em; /* Adjusts for spacing */
+}
+
+
 #upload_input, #image_template {
     display: none;
 }
@@ -25,7 +55,7 @@ body {
     display: block;
     position: relative;
     margin: 0 auto 0 auto;
-    -webkit-transition: -webkit-transform 0.3s;
+    -webkit-transition: -webkit-transform 0.8s;
     -webkit-transform-style: preserve-3d;
     // -webkit-perspective doesn't seem to cut it for Chrome
     -webkit-transform: perspective(5000px) rotateY(0deg);

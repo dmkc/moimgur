@@ -37,8 +37,8 @@ $(document).ready(function(){
             ImageView = Backbone.View.extend({
                 template: _.template($('#image_template').html()),
                 events: {
-                    "click .image_large_container": "flipCard",
-                    "click .image_details": "flipCard"
+                    //"click .image_large_container": "flipCard",
+                    //"click .image_details": "flipCard"
                 },
 
                 initialize: function() {
@@ -100,13 +100,14 @@ $(document).ready(function(){
                 },
 
                 flipCard: function(e) {
-                    this.imageURL.select();
                     if(e && e.target == this.imageURL[0]) {
                         e.preventDefault();
                         return;
                     }
-                    if(this.model.get('link') != '')
+                    if(this.model.get('link') != '') {
                         this.$el.toggleClass('flipped');
+                        this.imageURL.select();
+                    }
                 }
             }),
 
@@ -125,9 +126,13 @@ $(document).ready(function(){
                     this.uploadInput = $('#upload_input');
                     this.droparea = $('#droparea');
                     this.gallery = $('#gallery');
+                    this.progress = $('#progress');
 
                     Images.on('add', this.addImage, this);
                     Images.on('remove', this.removeImage, this);
+                    Images.on('preview_ready', this.upload, this);
+                    this.listenTo(Images, 'preview_ready', this.showProgress);
+                    this.listenTo(Images, 'uploaded', this.hideProgress);
                 },
 
                 addImage: function(image) {
@@ -137,12 +142,20 @@ $(document).ready(function(){
                     console.log('New image view:', view);
 
                     this.getLocalFile(image);
-                    this.upload();
+                    //this.upload();
                 },
                 removeImage: function(image) {
                     if(Images.length == 0) {
                         this.droparea.show();
                     }
+                },
+
+                showProgress: function() {
+                    this.progress.show();
+                },
+
+                hideProgress: function(){
+                    this.progress.hide();
                 },
 
                 // Generate local thumbnail
@@ -154,6 +167,7 @@ $(document).ready(function(){
                         image.set({
                             dataURL: fr.result
                         });
+                        image.trigger('preview_ready', image);
                     }
 
                     fr.readAsDataURL(image.get('fileObject'));
@@ -172,6 +186,8 @@ $(document).ready(function(){
 
                 // Upload all files in the settings.file_list array
                 upload: function(){
+                    var that = this;
+
                     for(var i=0; i<Images.length; i++) {
                         var image = Images.at(i),
                             file  = image.get('fileObject');
@@ -202,10 +218,6 @@ $(document).ready(function(){
                     }
                 },
                 
-
-                thumbnailDone: function(image) {
-                    console.log('Thumbnail done');
-                },
 
                 // Open browser file upload dialogue
                 openFileDialogue: function(e){
