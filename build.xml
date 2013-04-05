@@ -18,7 +18,7 @@
  -->
  
 <!-- Set name to the application name: used for BAR/COD and directory on file system -->
-<project default="build" basedir="." name="bbui_test">
+<project default="build" basedir="." name="moimgur">
 
 	<!-- Concatenation destinations -->
 	<property name="jsconcat" value="scripts.js"/>

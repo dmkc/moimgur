@@ -22,10 +22,8 @@
     <description>Imgur uploader for BlackBerry</description>
 
     <author href="https://github.com/dmkc">Dmitry Kichenko</author>
-    <icon src="images/icon.png" />
-
-    <content src="http://169.254.0.2:8000/index.htm" />
-    <access uri="http://169.254.0.2" subdomains="true" />
+    <!--<icon src="images/icon.png" /> -->
+    <content src="index.htm" />
 
     <!-- Allowing access to just 'file:///*' doesn't seem to cut 
          it for local files -->
@@ -42,7 +40,7 @@
     </rim:permissions>
 
     <!-- Allow the app to be shared into -->
-    <rim:invoke-target id="in.ohnotaga.moimgur.app">
+    <rim:invoke-target id="com.kichenko.moimgur.app">
         <type>APPLICATION</type>
         <filter>
             <action>bb.action.SHARE</action>
@@ -50,7 +48,7 @@
             <property var="uris" value="file://,data://local,http://"/>
         </filter>
     </rim:invoke-target>
-    <rim:invoke-target id="in.ohnotaga.moimgur.viewer">
+    <rim:invoke-target id="com.kichenko.moimgur.viewer">
         <type>VIEWER</type>
         <filter>
             <action>bb.action.SHARE</action>
