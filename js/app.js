@@ -39,19 +39,19 @@ $(document).ready(function(){
                 events: {
                     //"click .image_large_container": "flipCard",
                     //"click .image_details": "flipCard"
-                    "click .button_close": "destroy"
+                    "click .button_another": "destroy"
                 },
 
                 initialize: function() {
                     this.listenTo(this.model, 'change', this.render);
                     this.listenTo(this.model, 'uploaded', this.flipCard);
+                    this.listenTo(this.model, 'preview_ready', this.upload, this);
                     this.listenTo(this.model, 'destroy', this.remove);
                     // Create progress meter once image is loaded from disk
                     //this.on('Image:dataReady', this.initProgressMeter, this);
                 },
 
                 render: function() {
-                    console.log('Render model', this.model.toJSON());
                     // Only render node once, then update values
                     if(this.$el.children().length === 0) {
                         this.$el.html(this.template(this.model.toJSON()));
@@ -114,7 +114,36 @@ $(document).ready(function(){
                         this.$el.toggleClass('flipped');
                         this.imageURL.select();
                     }
-                }
+                },
+
+                upload: function(){
+                    var image = this.model,
+                        file  = image.get('fileObject');
+
+                    // Make sure we don't upload non-images
+                    if (!file || !file.type.match(/image.*/)) return;
+
+                    // Build a formdata object
+                    var fd = new FormData();
+                    fd.append("image", file); // Append the file
+
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("POST", settings.upload_uri);
+                    xhr.setRequestHeader('Authorization', 'Client-ID ' + settings.client_id);
+                    xhr.onload = function() {
+                        var response = JSON.parse(xhr.responseText);
+                        console.log('Image uploaded:', response);
+
+                        // XXX: Ugly GUI stuff
+                        //$('#droparea').remove();
+                        image.set('deletehash', response.data.deletehash);
+                        image.set('link', response.data.link);
+                        image.set('id', response.data.id);
+                        image.trigger('uploaded');
+                    }
+                    // XXX error handling
+                    xhr.send(fd);
+                },
             }),
 
             MainView = Backbone.View.extend({
@@ -136,7 +165,6 @@ $(document).ready(function(){
 
                     Images.on('add', this.addImage, this);
                     Images.on('remove', this.removeImage, this);
-                    Images.on('preview_ready', this.upload, this);
                     this.listenTo(Images, 'preview_ready', this.showProgress);
                     this.listenTo(Images, 'uploaded', this.hideProgress);
                 },
@@ -148,7 +176,6 @@ $(document).ready(function(){
                     console.log('New image view:', view);
 
                     this.getLocalFile(image);
-                    //this.upload();
                 },
                 removeImage: function(image) {
                     image.destroy();
@@ -237,7 +264,6 @@ $(document).ready(function(){
                 filesDropped: function(e) {
                     console.log("File dropped", e);
                     this.addFiles(e.dataTransfer.files);
-                    //this.upload();
                 },
 
                 // Add files to the array of files to be uploaded
@@ -276,7 +302,7 @@ $(document).ready(function(){
             // Mix in event handling
             _.extend(MainView, Backbone.Events);
 
-            window.MainView = new MainView;
+            window.MainView = MainView;
             window.Images  = Images;
     })();
 });
