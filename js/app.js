@@ -39,6 +39,7 @@ $(document).ready(function(){
                 events: {
                     //"click .image_large_container": "flipCard",
                     //"click .image_details": "flipCard"
+                    "click .button_close": "destroy"
                 },
 
                 initialize: function() {
@@ -66,6 +67,10 @@ $(document).ready(function(){
                     this.imageURL.val(this.model.get('link'));
                     //this.input = this.$('.edit');
                     return this;
+                },
+
+                destroy: function() {
+                    this.model.destroy();
                 },
 
                 // XXX: Unused at the moment. Funky uploading animation?
