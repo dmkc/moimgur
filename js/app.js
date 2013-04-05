@@ -44,6 +44,7 @@ $(document).ready(function(){
                 initialize: function() {
                     this.listenTo(this.model, 'change', this.render);
                     this.listenTo(this.model, 'uploaded', this.flipCard);
+                    this.listenTo(this.model, 'destroy', this.remove);
                     // Create progress meter once image is loaded from disk
                     //this.on('Image:dataReady', this.initProgressMeter, this);
                 },
@@ -145,6 +146,7 @@ $(document).ready(function(){
                     //this.upload();
                 },
                 removeImage: function(image) {
+                    image.destroy();
                     if(Images.length == 0) {
                         this.droparea.show();
                     }
@@ -173,16 +175,6 @@ $(document).ready(function(){
                     fr.readAsDataURL(image.get('fileObject'));
                 },
 
-
-                // Callback for when the user has selected or dragged
-                // new files and they are ready to be uploaded
-                filesReady: function() {
-                    var files = _.clone(settings.file_list), file;
-
-                    while( settings.file_list.length != 0 ) {
-                        file = files.splice(0,1)[0]; 
-                    }
-                },
 
                 // Upload all files in the settings.file_list array
                 upload: function(){
@@ -231,8 +223,9 @@ $(document).ready(function(){
                     e.preventDefault();
                     this.addFiles(files);
 
-                    console.log('Added some new files:', files); 
-                    window.files = files;
+                    console.log('User selected files:', files); 
+                    // Makes `change` event work if user re-uploads same image
+                    this.uploadInput.val('');
                 },
 
                 // Callback for files flying in via drag and drop
