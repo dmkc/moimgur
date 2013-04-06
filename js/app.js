@@ -39,25 +39,26 @@ $(document).ready(function(){
                 events: {
                     //"click .image_large_container": "flipCard",
                     //"click .image_details": "flipCard"
-                    "click .button_another": "destroy"
+                    "click .button_another": "handleNewUpload"
                 },
 
                 initialize: function() {
                     this.listenTo(this.model, 'change', this.render);
                     this.listenTo(this.model, 'uploaded', this.flipCard);
                     this.listenTo(this.model, 'preview_ready', this.upload, this);
-                    this.listenTo(this.model, 'destroy', this.remove);
-                    // Create progress meter once image is loaded from disk
-                    //this.on('Image:dataReady', this.initProgressMeter, this);
+                    this.listenTo(this.model, 'destroy', this.handleRemove);
                 },
 
                 render: function() {
+
                     // Only render node once, then update values
-                    if(this.$el.children().length === 0) {
+                    if(this.$el.children().length == 0) {
                         this.$el.html(this.template(this.model.toJSON()));
+                        this.$el.addClass('image');
+                        this.$el.addClass('slide_up');
                     }
 
-                    this.$el.addClass('image');
+                    // re-init DOM references
                     this.imageLarge  = this.$('.image_large');
                     this.thumbnail = this.$('.thumb');
                     this.imageURL = this.$('.image_url');
@@ -69,8 +70,18 @@ $(document).ready(function(){
                     return this;
                 },
 
-                destroy: function() {
-                    this.model.destroy();
+                handleRemove: function() {
+                    var that = this;
+                    this.el.addEventListener('webkitTransitionEnd',
+                         function(){
+                             that.remove();
+                         });
+                    this.$el.addClass('slide_down');
+                },
+
+                handleNewUpload: function() {
+                    // ready UI for removal of image
+                    this.model.trigger('prepare_destroy', this.model);
                 },
 
                 // XXX: Unused at the moment. Funky uploading animation?
@@ -106,14 +117,22 @@ $(document).ready(function(){
                 },
 
                 flipCard: function(e) {
-                    if(e && e.target == this.imageURL[0]) {
-                        e.preventDefault();
-                        return;
-                    }
-                    if(this.model.get('link') != '') {
-                        this.$el.toggleClass('flipped');
-                        this.imageURL.select();
-                    }
+                    this.$el.toggleClass('flipped');
+                    // pre-select the URL after animation is done
+                    this.selectURLCallback = $.proxy(this.selectURL, this);
+                    this.el.addEventListener('webkitTransitionEnd', 
+                                             this.selectURLCallback);
+                },
+
+                slideUp: function() {
+                    this.$el.removeClass('slide_up');
+                },
+
+                selectURL: function(e){
+                    this.imageURL.select();
+                    this.el.removeEventListener('webkitTransitionEnd',
+                                                this.selectURLCallback);
+                    delete this.selectURLCallback;
                 },
 
                 upload: function(){
@@ -135,7 +154,6 @@ $(document).ready(function(){
                         console.log('Image uploaded:', response);
 
                         // XXX: Ugly GUI stuff
-                        //$('#droparea').remove();
                         image.set('deletehash', response.data.deletehash);
                         image.set('link', response.data.link);
                         image.set('id', response.data.id);
@@ -164,8 +182,8 @@ $(document).ready(function(){
                     this.progress = $('#progress');
 
                     Images.on('add', this.addImage, this);
-                    Images.on('remove', this.removeImage, this);
-                    this.listenTo(Images, 'preview_ready', this.showProgress);
+                    Images.on('prepare_destroy', this.removeImage, this);
+                    this.listenTo(Images, 'add', this.showProgress);
                     this.listenTo(Images, 'uploaded', this.hideProgress);
                 },
 
@@ -173,15 +191,14 @@ $(document).ready(function(){
                     this.droparea.hide();
                     var view = new ImageView({model: image});
                     this.gallery.append(view.render().el);
+                    view.slideUp();
                     console.log('New image view:', view);
 
                     this.getLocalFile(image);
                 },
                 removeImage: function(image) {
+                    this.droparea.show();
                     image.destroy();
-                    if(Images.length == 0) {
-                        this.droparea.show();
-                    }
                 },
 
                 showProgress: function() {
@@ -197,6 +214,10 @@ $(document).ready(function(){
                     var fr   = new FileReader(),
                         that = this;
                     
+                    fr.onerror = function(e) {
+                        alert("ERROR reading file:" + e.toString());
+                    };
+
                     fr.onloadend = function() {
                         image.set({
                             dataURL: fr.result
@@ -230,8 +251,6 @@ $(document).ready(function(){
                             var response = JSON.parse(xhr.responseText);
                             console.log('Image uploaded:', response);
 
-                            // XXX: Ugly GUI stuff
-                            //$('#droparea').remove();
                             image.set('deletehash', response.data.deletehash);
                             image.set('link', response.data.link);
                             image.set('id', response.data.id);
@@ -304,5 +323,7 @@ $(document).ready(function(){
 
             window.MainView = MainView;
             window.Images  = Images;
+
+            window.App = new MainView();
     })();
 });

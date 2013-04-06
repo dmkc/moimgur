@@ -3,6 +3,7 @@
     <head>
         <title>slimgur</title>
         <meta charset="UTF-8"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
         <link rel="stylesheet" type="text/css" href="style/style.css">
 
 		<script type="text/javascript" src="local:///chrome/webworks.js"></script>
@@ -23,7 +24,6 @@
                         window.webkitRequestFileSystem(window.PERSISTENT,
                             1024 * 1024,
                             function success(fs) {
-                            //alert('4');
                                 fs.root.getFile(data.uri, null, 
                                     function success(fileEntry) {
                                         // could this be more nested
@@ -70,23 +70,22 @@
                     <!-- Details -->
                     <div class="image_details">
 
-                        <div class="details_wrapper clearfix">
+                        <div class="details_wrapper">
                             <div class="image_data">
-                                <img class="thumb" alt="" 
-                                     src="">
+                                <img class="thumb" alt="" src="">
                             </div>
 
-                            <input class="image_url" type="text"
-                                   value="" disabled>
+                            <input class="image_url" type="text" value="" disabled>
 
-                           <button class="button_close">Upload another</button>
+                           <div class="button_another button">
+                               <span>Upload another</span>
+                           </div>
 
                         </div>
                     </div>
                     <!-- Large image -->
                     <div class="image_large_container">
-                        <img class="image_large" alt="Image you uploaded" 
-                             src="">
+                        <img class="image_large" alt="" src="">
                     </div>
                     <!--
                     <div class="progress">

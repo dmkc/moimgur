@@ -22,7 +22,7 @@
     <description>Imgur uploader for BlackBerry</description>
 
     <author href="https://github.com/dmkc">Dmitry Kichenko</author>
-    <!--<icon src="images/icon.png" /> -->
+    <icon src="images/icon.png" /> 
     <content src="index.htm" />
 
     <!-- Allowing access to just 'file:///*' doesn't seem to cut 
