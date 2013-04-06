@@ -23,9 +23,17 @@
                         window.webkitRequestFileSystem(window.PERSISTENT,
                             1024 * 1024,
                             function success(fs) {
+                            //alert('4');
                                 fs.root.getFile(data.uri, null, 
-                                    function success(f) {
-                                        window.MainView.addFiles([f.file()]);
+                                    function success(fileEntry) {
+                                        // could this be more nested
+                                        fileEntry.file(
+                                            function success(file) {
+                                                window.Images.create({ fileObject: file }); 
+                                            }, 
+                                            function fail(e) {
+                                                alert("FileEntry fail:"+e);
+                                            });
                                     },
                                     function error(e){
                                         alert("Error reading file"+e);
