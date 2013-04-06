@@ -44,13 +44,13 @@ $(document).ready(function(){
 
                 initialize: function() {
                     this.listenTo(this.model, 'change', this.render);
+                    this.listenTo(this.model, 'preview_ready', this.slideUp, this);
+                    this.listenTo(this.model, 'slideup_ready', this.upload, this);
                     this.listenTo(this.model, 'uploaded', this.flipCard);
-                    this.listenTo(this.model, 'preview_ready', this.upload, this);
                     this.listenTo(this.model, 'destroy', this.handleRemove);
                 },
 
                 render: function() {
-
                     // Only render node once, then update values
                     if(this.$el.children().length == 0) {
                         this.$el.html(this.template(this.model.toJSON()));
@@ -63,8 +63,6 @@ $(document).ready(function(){
                     this.thumbnail = this.$('.thumb');
                     this.imageURL = this.$('.image_url');
 
-                    this.imageLarge.attr('src', this.model.get('dataURL'));
-                    this.thumbnail.attr( 'src', this.model.get('dataURL'));
                     this.imageURL.val(this.model.get('link'));
                     //this.input = this.$('.edit');
                     return this;
@@ -125,7 +123,20 @@ $(document).ready(function(){
                 },
 
                 slideUp: function() {
-                    this.$el.removeClass('slide_up');
+                    var that = this;
+                    this.imageLarge.attr('src', this.model.get('dataURL'));
+                    this.thumbnail.attr( 'src', this.model.get('dataURL'));
+
+                    this.el.addEventListener('webkitTransitionEnd',
+                         function slideUpHandler(e){
+                             var self = slideUpHandler || arguments.callee;
+                             that.el.removeEventListener('webkitTransitionEnd', self);
+                             that.model.trigger('slideup_ready');
+                         });
+                    // Wait a bit for the data blob to draw
+                    setTimeout(function(){
+                        that.el.classList.remove('slide_up');
+                    }, 100);
                 },
 
                 selectURL: function(e){
@@ -183,7 +194,7 @@ $(document).ready(function(){
 
                     Images.on('add', this.addImage, this);
                     Images.on('prepare_destroy', this.removeImage, this);
-                    this.listenTo(Images, 'add', this.showProgress);
+                    this.listenTo(Images, 'slideup_ready', this.showProgress);
                     this.listenTo(Images, 'uploaded', this.hideProgress);
                 },
 
@@ -191,7 +202,6 @@ $(document).ready(function(){
                     this.droparea.hide();
                     var view = new ImageView({model: image});
                     this.gallery.append(view.render().el);
-                    view.slideUp();
                     console.log('New image view:', view);
 
                     this.getLocalFile(image);
