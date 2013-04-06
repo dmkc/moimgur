@@ -56,7 +56,7 @@ body {
 }
 
 #gallery {
-    //height: 100%;
+    -webkit-perspective: 200em;
 }
 
 .image {
@@ -66,20 +66,20 @@ body {
     -webkit-transition: all ease-in-out 1s;
     -webkit-transform-style: preserve-3d;
     // -webkit-perspective doesn't seem to cut it for Chrome
-    -webkit-transform: perspective(500px) rotateY(0deg);
+    -webkit-transform: rotateY(0deg);
     //height: 100%;
     text-align: center;
 }
 
 .image.flipped {
-    -webkit-transform: perspective(500px) scale(.5) rotateY(180deg) scale(2);
+    -webkit-transform: scale(.5) rotateY(180deg) scale(2);
 }
 
 .image.slide_up {
     -webkit-transform: translateY(100%);
 }
 .image.slide_down {
-    -webkit-transform: perspective(500px) scale(.5) rotateY(180deg) scale(2) translateY(100%);
+    -webkit-transform: scale(.5) rotateY(180deg) scale(2) translateY(100%);
 }
 
 .image_large_container {
@@ -99,7 +99,7 @@ body {
     top: 0; right: 0;
     height: 100%;
     width: 100%;
-    -webkit-transform: perspective(600px) rotateY(180deg);
+    -webkit-transform: rotateY(180deg);
     -webkit-backface-visibility: hidden;
     //border-bottom: 10px solid #1E1E1E;
 }
