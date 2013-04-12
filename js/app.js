@@ -43,6 +43,7 @@ $(document).ready(function(){
                 },
 
                 initialize: function() {
+                    // this just has declarative written all over it
                     this.listenTo(this.model, 'change', this.render);
                     this.listenTo(this.model, 'preview_ready', this.slideUp, this);
                     this.listenTo(this.model, 'slideup_ready', this.upload, this);
@@ -164,7 +165,6 @@ $(document).ready(function(){
                         var response = JSON.parse(xhr.responseText);
                         console.log('Image uploaded:', response);
 
-                        // XXX: Ugly GUI stuff
                         image.set('deletehash', response.data.deletehash);
                         image.set('link', response.data.link);
                         image.set('id', response.data.id);
@@ -187,15 +187,36 @@ $(document).ready(function(){
                 initialize: function() {
                     var that = this;
 
+                    // TODO: does this belong here?
                     this.uploadInput = $('#upload_input');
                     this.droparea = $('#droparea');
                     this.gallery = $('#gallery');
                     this.progress = $('#progress');
 
-                    Images.on('add', this.addImage, this);
-                    Images.on('prepare_destroy', this.removeImage, this);
+                    this.listenTo(Images, 'add', this.addImage);
+                    this.listenTo(Images, 'prepare_destroy', this.removeImage);
                     this.listenTo(Images, 'slideup_ready', this.showProgress);
                     this.listenTo(Images, 'uploaded', this.hideProgress);
+                },
+
+                // UI stuff
+                // ===========
+                showProgress: function() {
+                    this.progress.show();
+                },
+
+                hideProgress: function(){
+                    this.progress.hide();
+                },
+
+                // CONTROLLER
+                // ==========
+
+                // Add files to the array of files to be uploaded
+                addFiles: function(files) {
+                    for(var i=0; i<files.length; i++) {
+                        Images.create({ fileObject: files[i] }); 
+                    }
                 },
 
                 addImage: function(image) {
@@ -209,14 +230,6 @@ $(document).ready(function(){
                 removeImage: function(image) {
                     this.droparea.show();
                     image.destroy();
-                },
-
-                showProgress: function() {
-                    this.progress.show();
-                },
-
-                hideProgress: function(){
-                    this.progress.hide();
                 },
 
                 // Generate local thumbnail
@@ -238,45 +251,15 @@ $(document).ready(function(){
                     fr.readAsDataURL(image.get('fileObject'));
                 },
 
-
-                // Upload all files in the settings.file_list array
-                upload: function(){
-                    var that = this;
-
-                    for(var i=0; i<Images.length; i++) {
-                        var image = Images.at(i),
-                            file  = image.get('fileObject');
-
-                        // Make sure we don't upload non-images
-                        if (!file || !file.type.match(/image.*/)) return;
-
-                        // Build a formdata object
-                        var fd = new FormData();
-                        fd.append("image", file); // Append the file
-
-                        var xhr = new XMLHttpRequest();
-                        xhr.open("POST", settings.upload_uri);
-                        xhr.setRequestHeader('Authorization', 'Client-ID ' + settings.client_id);
-                        xhr.onload = function() {
-                            var response = JSON.parse(xhr.responseText);
-                            console.log('Image uploaded:', response);
-
-                            image.set('deletehash', response.data.deletehash);
-                            image.set('link', response.data.link);
-                            image.set('id', response.data.id);
-                            image.trigger('uploaded');
-                        }
-                        // XXX error handling
-                        xhr.send(fd);
-                    }
-                },
-                
-
                 // Open browser file upload dialogue
                 openFileDialogue: function(e){
                     this.uploadInput.trigger('click');
                 },
                 
+                
+                // CALLBACKS
+                // =============
+
                 // Callback for files selected using browser file dialogue
                 filesSelected: function(e) {
                     var files = this.uploadInput[0].files;
@@ -289,18 +272,12 @@ $(document).ready(function(){
                     this.uploadInput.val('');
                 },
 
-                // Callback for files flying in via drag and drop
+                // Callback for files flying in via drag and drop (not used on mobile)
                 filesDropped: function(e) {
                     console.log("File dropped", e);
                     this.addFiles(e.dataTransfer.files);
                 },
 
-                // Add files to the array of files to be uploaded
-                addFiles: function(files) {
-                    for(var i=0; i<files.length; i++) {
-                        Images.create({ fileObject: files[i] }); 
-                    }
-                },
 
                 storeFileLocally: function(file){
                     //blackberry.io.sandbox = false;

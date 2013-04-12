@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 * Copyright 2010-2011 Research In Motion Limited.
 *
@@ -25,33 +25,31 @@
     <icon src="images/icon.png" /> 
     <content src="index.htm" />
 
-    <!-- Allowing access to just 'file:///*' doesn't seem to cut 
-         it for local files -->
-    <access  uri="*" subdomains="true" />
     <access  uri="https://api.imgur.com" subdomains="true" />
     <feature id="blackberry.invoked" version="1.0.0" required="true" />
-    <feature id="blackberry.invoke"  version="1.0.0" required="true" />
     <feature id="blackberry.io"   required="true" />
-    <feature id="blackberry.io.file"   required="true" />
     <feature id="blackberry.app"  required="true" />
 
+    <!-- Need access to user's file system -->
     <rim:permissions>
         <rim:permit>access_shared</rim:permit>
     </rim:permissions>
 
-    <!-- Allow the app to be shared into -->
+    <!-- Configure invoking -->
     <rim:invoke-target id="com.kichenko.moimgur.app">
         <type>APPLICATION</type>
         <filter>
             <action>bb.action.SHARE</action>
+            <!--Allow sharing any image -->
             <mime-type>image/*</mime-type>
-            <property var="uris" value="file://,data://local,http://"/>
+            <property var="uris" value="file://,data://local"/>
         </filter>
     </rim:invoke-target>
     <rim:invoke-target id="com.kichenko.moimgur.viewer">
         <type>VIEWER</type>
         <filter>
             <action>bb.action.SHARE</action>
+            <!--Allow sharing any image -->
             <mime-type>image/*</mime-type>
             <property var="uris" value="file://,data://local"/>
         </filter>
