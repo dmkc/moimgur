@@ -42,6 +42,7 @@ body {
     display: inline-block;   
 }
 
+/* Used for vertical centering */
 #progress_icon_ghost {
     content: '';
     display: inline-block;
@@ -131,9 +132,8 @@ body {
     padding: 3%;
     margin: 3%;
     width: 94%;
-
-
 }
+
 .image .image_details .image_url::-webkit-selection {
     background: #258; /* Safari */
 }
@@ -175,7 +175,7 @@ body {
     }
 }
 
-// Various helpers
+/* Util */
 .clearfix:after {
      visibility: hidden;
      display: block;
@@ -185,7 +185,4 @@ body {
      height: 0;
      }
 .clearfix { display: inline-block; }
-
-
-
 

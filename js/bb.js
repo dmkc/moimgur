@@ -29,7 +29,7 @@ document.addEventListener('webworksready', function(e) {
 
 				fileEntry: function (file){
 					// Got a File object
-					window.Images.create({
+					window.App.invoke({
 						fileObject: file 
 					}); 
 				}, 

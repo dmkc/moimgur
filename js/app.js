@@ -213,21 +213,6 @@ $(document).ready(function(){
 
 
                 /*
-                 * VIEW
-                 */
-                showProgress: function() {
-                    this.dom.progress.show();
-                },
-
-                hideProgress: function(){
-                    this.dom.progress.hide();
-                },
-
-                showDroparea: function(image) {
-                    this.dom.droparea.show();
-                },
-
-                /*
                  * CONTROLLER
                  */
 
@@ -269,6 +254,11 @@ $(document).ready(function(){
                 // Open browser file upload dialogue
                 openFileDialogue: function(e){
                     this.dom.uploadInput.trigger('click');
+                },
+
+                // Handle BB10 invocation
+                invoke: function(args){
+                    this.images.create(args);
                 },
                 
                 
@@ -317,6 +307,21 @@ $(document).ready(function(){
                             alert("Error reading file: "+e.code);
                         }
                     );
+                }, 
+
+                /*
+                 * VIEW
+                 */
+                showProgress: function() {
+                    this.dom.progress.show();
+                },
+
+                hideProgress: function(){
+                    this.dom.progress.hide();
+                },
+
+                showDroparea: function(image) {
+                    this.dom.droparea.show();
                 }
             });
            
