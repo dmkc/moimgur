@@ -20,7 +20,6 @@ document.addEventListener('webworksready', function(e) {
 				}, 
 
 				getFile: function(fileEntry) {
-					// Could this be more nested? Yes.
 					fileEntry.file(
 						callbacks.fileEntry,
 						callbacks.err
@@ -37,7 +36,7 @@ document.addEventListener('webworksready', function(e) {
 
 			// FS sandboxing off to have access to all user data
 			blackberry.io.sandbox = false;
-			// Chop off the 'file:///' to turn URI into a path
+			// Chop off 'file:///' 
 			data.uri = data.uri.substr(7, data.uri.length)
 
 			window.webkitRequestFileSystem(

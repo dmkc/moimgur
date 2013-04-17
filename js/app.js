@@ -1,6 +1,5 @@
 $(document).ready(function(){
     (function(){
-        // A few convenient fixes
         var settings = {
                 upload_uri: "https://api.imgur.com/3/image",
                 // Get your own at https://api.imgur.com/oauth2/addclient
@@ -9,11 +8,10 @@ $(document).ready(function(){
             },
 
             ImageModel = Backbone.Model.extend({
-                // Declare useful properties
                 defaults: {
                     // File API object for this image
                     fileObject: undefined,
-                    // empty data URL == needs a thumbnail
+                    // Data string for this image used in the preview
                     dataURL: '',
                     status: 0,
                     deletehash: '',
@@ -72,11 +70,12 @@ $(document).ready(function(){
                 },
 
                 newUpload: function() {
-                    // ready UI for removal of image
+                    // prepare UI for removal of image
                     this.model.trigger('destroy', this.model);
                 },
 
 
+                // Handle uploading of the image
                 upload: function(){
                     var image = this.model,
                         file  = image.get('fileObject');
@@ -105,7 +104,6 @@ $(document).ready(function(){
                         image.destroy();
                     });
 
-                    // XXX: error handling
                     xhr.send(fd);
                 },
 
@@ -123,7 +121,7 @@ $(document).ready(function(){
                         this.$el.addClass('slide_up');
                     }
 
-                    // Set DOM references
+                    // Set DOM references when available
                     if(this.dom.image == undefined) {
                         try {
                             this.initDOM();
@@ -206,8 +204,8 @@ $(document).ready(function(){
                         'destroy': this.showDroparea,
                         'slideup_ready': this.showProgress,
                         'uploaded': this.hideProgress,
-                        // When network is down
                     });
+                    // When network is down
                     this.listenTo(this.images, 'destroy', this.hideProgress);
                 },
 
@@ -216,13 +214,13 @@ $(document).ready(function(){
                  * CONTROLLER
                  */
 
-                // Add files to the array of files to be uploaded
                 addFiles: function(files) {
                     for(var i=0; i<files.length; i++) {
                         this.images.create({ fileObject: files[i] }); 
                     }
                 },
 
+                // Handle image adding (via open file dialogue or invocation)
                 addImage: function(image) {
                     this.dom.droparea.hide();
                     var view = new ImageView({model: image});
@@ -232,7 +230,7 @@ $(document).ready(function(){
                     this.getLocalFile(image);
                 },
 
-                // Generate local thumbnail
+                // Generate thumbnail from local data
                 getLocalFile: function(image) {
                     var fr   = new FileReader(),
                         that = this;
@@ -276,38 +274,6 @@ $(document).ready(function(){
                     // Makes `change` event work if user re-uploads same image
                     this.dom.uploadInput.val('');
                 },
-
-                // Callback for files flying in via drag and drop (not used on mobile)
-                filesDropped: function(e) {
-                    console.log("File dropped", e);
-                    this.addFiles(e.dataTransfer.files);
-                },
-
-
-                storeFileLocally: function(file){
-                    //blackberry.io.sandbox = false;
-                    // chop off the 'file:///' protocol from URI
-                    //data.uri = data.uri.substr(7, data.uri.length)
-
-                    window.webkitRequestFileSystem(window.TEMPORARY,
-                        1024 * 1024,
-                        function success(fs) {
-                            fs.root.getFile(file.name, {create:true}, 
-                                function success(fileEntry) {
-                                    fileEntry.createWriter(function(fileWriter) {
-                                        // Note: write() can take a File or Blob object.
-                                        fileWriter.write(file); 
-                                    });
-                                },
-                                function error(e){
-                                    alert("Error reading file"+e);
-                                });
-                        },
-                        function error(e){
-                            alert("Error reading file: "+e.code);
-                        }
-                    );
-                }, 
 
                 /*
                  * VIEW
