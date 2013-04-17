@@ -62,7 +62,7 @@
 	<!-- Set the details of the device or simulator for deployment -->
 	<!-- For BB10 device -->
 	<property name="device.native.ip" value="169.254.0.1"/>
-	<property name="device.native.pw" value="1324" />
+	<property name="device.native.pw" value="YOUR_DEVICE_PASSWORD" />
 	<!-- For Tablet device -->
 	<property name="device.air.ip" value="169.254.0.2"/>
 	<property name="device.air.pw" value="" />
