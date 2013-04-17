@@ -1,14 +1,15 @@
 $(document).ready(function(){
     (function(){
-        // Some globals
+        // A few convenient fixes
         var settings = {
                 upload_uri: "https://api.imgur.com/3/image",
+                // Get your own at https://api.imgur.com/oauth2/addclient
                 client_id:  "891d1ed77f3ecf4",
                 file_list: []
             },
 
-        // Model for a single image
             ImageModel = Backbone.Model.extend({
+                // Declare useful properties
                 defaults: {
                     // File API object for this image
                     fileObject: undefined,
@@ -27,125 +28,54 @@ $(document).ready(function(){
             ImageCollection = Backbone.Collection.extend({
                 model: ImageModel,
                 sync: function(){}
-
             }),
 
-        // Initialize the image collection
-            Images = new ImageCollection,
+            GenericView = Backbone.View.extend({
+                // Add listening to a collection of events
+                listenToMany: function(other, events){
+                    for(var p in events) {
+                        this.listenTo(other, p, events[p]);
+                    }
+                }
+            }),
 
-        // A view for a single image 
-            ImageView = Backbone.View.extend({
-                template: _.template($('#image_template').html()),
-                events: {
-                    //"click .image_large_container": "flipCard",
-                    //"click .image_details": "flipCard"
-                    "click .button_another": "handleNewUpload"
-                },
+            ImageView = GenericView.extend({
+                template: $('#image_template'),
+                dom: {},
 
+
+                /*
+                 * CONTROLLER
+                 */
                 initialize: function() {
                     // this just has declarative written all over it
-                    this.listenTo(this.model, 'change', this.render);
-                    this.listenTo(this.model, 'preview_ready', this.slideUp, this);
-                    this.listenTo(this.model, 'slideup_ready', this.upload, this);
-                    this.listenTo(this.model, 'uploaded', this.flipCard);
-                    this.listenTo(this.model, 'destroy', this.handleRemove);
+                    this.listenToMany(this.model, {
+                        'change': this.render,
+                        'preview_ready': this.slideUp,
+                        'slideup_ready': this.upload,
+                        'uploaded': this.flipCard,
+                        'destroy': this.slideDown
+                    });
                 },
 
-                render: function() {
-                    // Only render node once, then update values
-                    if(this.$el.children().length == 0) {
-                        this.$el.html(this.template(this.model.toJSON()));
-                        this.$el.addClass('image');
-                        this.$el.addClass('slide_up');
-                    }
-
-                    // re-init DOM references
-                    this.imageLarge  = this.$('.image_large');
-                    this.thumbnail = this.$('.thumb');
-                    this.imageURL = this.$('.image_url');
-
-                    this.imageURL.val(this.model.get('link'));
-                    //this.input = this.$('.edit');
-                    return this;
-                },
-
-                handleRemove: function() {
+                // Deferred DOM init
+                initDOM: function() {
                     var that = this;
-                    this.el.addEventListener('webkitTransitionEnd',
-                         function(){
-                             that.remove();
-                         });
-                    this.$el.addClass('slide_down');
+
+                    this.dom.image  = this.$('.image_large');
+                    this.dom.thumb = this.$('.thumb');
+                    this.dom.url = this.$('.image_url');
+                    this.dom.uploadAnother = this.$('.button_another');
+                    this.dom.uploadAnother.on("touchstart", function(){
+                        that.newUpload();
+                    });
                 },
 
-                handleNewUpload: function() {
+                newUpload: function() {
                     // ready UI for removal of image
-                    this.model.trigger('prepare_destroy', this.model);
+                    this.model.trigger('destroy', this.model);
                 },
 
-                // XXX: Unused at the moment. Funky uploading animation?
-                initProgressMeter: function() {
-                    var canvas = this.$('.progress_left')[0],
-                        context = canvas.getContext("2d"),
-                        image = this.$(".image_large")[0],
-                        image_ratio = image.width/image.height;
-
-                    // Ensure adequate canvas size
-                    canvas.width  = image.width;
-                    canvas.height = image.height;
-
-                    context.drawImage(image, 0, 0);
-
-                    // Render the image black and white
-                    var imgd = context.getImageData(0, 0, 
-                                  image.width, 
-                                  image.height),
-
-                        pix = imgd.data,
-                        luminosity = 0, i=0;
-
-                    // Set each pixel to luminosity
-                    for (i = 0, n = pix.length; i < n; i += 4) {
-                        luminosity = pix[i] * .3 + pix[i+1] * .6 + 
-                            pix[i+2] * .10;
-                        pix[i] = pix[i+1] = pix[i+2] = luminosity;
-                    }
-
-                    context.putImageData(imgd, 0, 0);
-                    this.trigger('Image:progressMeterDone');
-                },
-
-                flipCard: function(e) {
-                    this.$el.toggleClass('flipped');
-                    // pre-select the URL after animation is done
-                    this.selectURLCallback = $.proxy(this.selectURL, this);
-                    this.el.addEventListener('webkitTransitionEnd', 
-                                             this.selectURLCallback);
-                },
-
-                slideUp: function() {
-                    var that = this;
-                    this.imageLarge.attr('src', this.model.get('dataURL'));
-                    this.thumbnail.attr( 'src', this.model.get('dataURL'));
-
-                    this.el.addEventListener('webkitTransitionEnd',
-                         function slideUpHandler(e){
-                             var self = slideUpHandler || arguments.callee;
-                             that.el.removeEventListener('webkitTransitionEnd', self);
-                             that.model.trigger('slideup_ready');
-                         });
-                    // Wait a bit for the data blob to draw
-                    setTimeout(function(){
-                        that.el.classList.remove('slide_up');
-                    }, 100);
-                },
-
-                selectURL: function(e){
-                    this.imageURL.select();
-                    this.el.removeEventListener('webkitTransitionEnd',
-                                                this.selectURLCallback);
-                    delete this.selectURLCallback;
-                },
 
                 upload: function(){
                     var image = this.model,
@@ -170,66 +100,151 @@ $(document).ready(function(){
                         image.set('id', response.data.id);
                         image.trigger('uploaded');
                     }
-                    // XXX error handling
+                    xhr.addEventListener('error', function(e){
+                        alert("Problem reaching network. No data or WiFi?");
+                        image.destroy();
+                    });
+
+                    // XXX: error handling
                     xhr.send(fd);
+                },
+
+                /*
+                 * VIEW
+                 */
+                render: function() {
+                    // Only render view once, then update
+                    if(this.$el.children().length == 0) {
+                        this.$el = this.template.clone();
+                        this.$el.attr('id', '');
+                        this.el = this.$el[0];
+
+                        this.$el.addClass('image');
+                        this.$el.addClass('slide_up');
+                    }
+
+                    // Set DOM references
+                    if(this.dom.image == undefined) {
+                        try {
+                            this.initDOM();
+                        } catch(e) {
+                            console.log("Couldn't init DOM");
+                        }
+                    }
+
+                    this.dom.url.val(this.model.get('link'));
+
+                    return this;
+                },
+
+                // Animate deletion
+                slideDown: function() {
+                    var that = this;
+                    this.el.addEventListener('webkitTransitionEnd',
+                         function(){
+                             that.remove();
+                         });
+                    this.$el.addClass('slide_down');
+                },
+
+                flipCard: function(e) {
+                    this.$el.toggleClass('flipped');
+                    // pre-select the URL after animation is done
+                    this.selectURLCallback = $.proxy(this.selectURL, this);
+                    this.el.addEventListener('webkitTransitionEnd', 
+                                             this.selectURLCallback);
+                },
+
+                slideUp: function() {
+                    var that = this;
+                    this.dom.image.attr('src', this.model.get('dataURL'));
+                    this.dom.thumb.attr( 'src', this.model.get('dataURL'));
+
+                    this.el.addEventListener('webkitTransitionEnd',
+                         function slideUpHandler(e){
+                             var self = slideUpHandler || arguments.callee;
+                             that.el.removeEventListener('webkitTransitionEnd', self);
+                             that.model.trigger('slideup_ready');
+                         });
+                    // Wait a bit for the data blob to draw
+                    setTimeout(function(){
+                        that.el.classList.remove('slide_up');
+                    }, 100);
+                },
+
+                selectURL: function(e){
+                    this.dom.url.select();
+                    this.el.removeEventListener('webkitTransitionEnd',
+                                                this.selectURLCallback);
+                    delete this.selectURLCallback;
                 },
             }),
 
-            MainView = Backbone.View.extend({
+            MainView = GenericView.extend({
                 el: $("#app"),
+                dom: {},
 
                 events: {
-                    "click  #droparea": "openFileDialogue",
+                    "touchstart  #droparea": "openFileDialogue",
                     "change #upload_input": "filesSelected"
                 },
 
 
                 initialize: function() {
                     var that = this;
+                    this.images = new ImageCollection,
 
-                    // TODO: does this belong here?
-                    this.uploadInput = $('#upload_input');
-                    this.droparea = $('#droparea');
-                    this.gallery = $('#gallery');
-                    this.progress = $('#progress');
+                    this.dom = {
+                        uploadInput : $('#upload_input'),
+                        droparea    : $('#droparea'),
+                        gallery     : $('#gallery'),
+                        progress    : $('#progress')
+                    };
 
-                    this.listenTo(Images, 'add', this.addImage);
-                    this.listenTo(Images, 'prepare_destroy', this.removeImage);
-                    this.listenTo(Images, 'slideup_ready', this.showProgress);
-                    this.listenTo(Images, 'uploaded', this.hideProgress);
+                    this.listenToMany(this.images, {
+                        'add': this.addImage,
+                        'destroy': this.showDroparea,
+                        'slideup_ready': this.showProgress,
+                        'uploaded': this.hideProgress,
+                        // When network is down
+                    });
+                    this.listenTo(this.images, 'destroy', this.hideProgress);
                 },
 
-                // UI stuff
-                // ===========
+
+                /*
+                 * VIEW
+                 */
                 showProgress: function() {
-                    this.progress.show();
+                    this.dom.progress.show();
                 },
 
                 hideProgress: function(){
-                    this.progress.hide();
+                    this.dom.progress.hide();
                 },
 
-                // CONTROLLER
-                // ==========
+                showDroparea: function(image) {
+                    this.dom.droparea.show();
+                },
+
+                /*
+                 * CONTROLLER
+                 */
 
                 // Add files to the array of files to be uploaded
                 addFiles: function(files) {
                     for(var i=0; i<files.length; i++) {
-                        Images.create({ fileObject: files[i] }); 
+                        this.images.create({ fileObject: files[i] }); 
                     }
                 },
 
                 addImage: function(image) {
-                    this.droparea.hide();
+                    this.dom.droparea.hide();
                     var view = new ImageView({model: image});
-                    this.gallery.append(view.render().el);
+                    this.dom.gallery.append(view.render().$el[0]);
                     console.log('New image view:', view);
 
                     this.getLocalFile(image);
-                },
-                removeImage: function(image) {
-                    this.droparea.show();
-                    image.destroy();
                 },
 
                 // Generate local thumbnail
@@ -253,7 +268,7 @@ $(document).ready(function(){
 
                 // Open browser file upload dialogue
                 openFileDialogue: function(e){
-                    this.uploadInput.trigger('click');
+                    this.dom.uploadInput.trigger('click');
                 },
                 
                 
@@ -262,14 +277,14 @@ $(document).ready(function(){
 
                 // Callback for files selected using browser file dialogue
                 filesSelected: function(e) {
-                    var files = this.uploadInput[0].files;
+                    var files = this.dom.uploadInput[0].files;
 
                     e.preventDefault();
                     this.addFiles(files);
 
                     console.log('User selected files:', files); 
                     // Makes `change` event work if user re-uploads same image
-                    this.uploadInput.val('');
+                    this.dom.uploadInput.val('');
                 },
 
                 // Callback for files flying in via drag and drop (not used on mobile)
@@ -305,12 +320,9 @@ $(document).ready(function(){
                 }
             });
            
+
             // Mix in event handling
             _.extend(MainView, Backbone.Events);
-
-            window.MainView = MainView;
-            window.Images  = Images;
-
             window.App = new MainView();
     })();
 });
